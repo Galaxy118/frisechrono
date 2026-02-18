@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Scrollbar personnalisée ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ─── Canvas dans l'éditeur ─── */
+.timeline-canvas-wrapper {
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+}
+
+/* ─── Animation toast ─── */
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.toast-animate {
+  animation: slideIn 0.3s ease;
+}
