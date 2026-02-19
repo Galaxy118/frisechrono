@@ -6,6 +6,8 @@ import Editor from './pages/Editor';
 import Profile from './pages/Profile';
 import Gallery from './pages/Gallery';
 import SharedFrise from './pages/SharedFrise';
+import ViewFrise from './pages/ViewFrise';
+import Admin from './pages/Admin';
 
 export default function App() {
   return (
@@ -18,11 +20,15 @@ export default function App() {
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:username" element={<Profile />} />
+            <Route path="/admin" element={<Admin />} />
           </Route>
 
           {/* Éditeur pleine page (sans header standard) */}
           <Route path="/editor" element={<Editor />} />
           <Route path="/editor/:id" element={<Editor />} />
+
+          {/* Vue lecture seule d'une frise publique */}
+          <Route path="/view/:id" element={<ViewFrise />} />
 
           {/* Frise partagée */}
           <Route path="/share/:token" element={<SharedFrise />} />

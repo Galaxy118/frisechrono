@@ -169,7 +169,7 @@ export default function Home() {
             {publicFrises.map((f, idx) => (
               <div
                 key={f._id || f.id || idx}
-                onClick={() => navigate(`/gallery`)}
+                onClick={() => navigate(`/view/${f.id || f._id}`)}
                 className="group bg-white rounded-xl border overflow-hidden hover:shadow-lg transition cursor-pointer"
               >
                 <div className="h-32 bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center">
@@ -185,7 +185,7 @@ export default function Home() {
                     <span>par {f.author?.username || 'Anonyme'}</span>
                     <div className="flex items-center gap-2">
                       <span className="flex items-center gap-0.5"><Eye size={11} /> {f.views || 0}</span>
-                      <span className="flex items-center gap-0.5"><Heart size={11} /> {f.likes?.length || 0}</span>
+                      <span className="flex items-center gap-0.5"><Heart size={11} /> {f.likesCount ?? f.likes?.length ?? 0}</span>
                     </div>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    server.js — Point d'entrée du backend Express
    ═══════════════════════════════════════════════════════════ */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -31,6 +31,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/frises', require('./routes/frises'));
 app.use('/api/gallery', require('./routes/gallery'));
 app.use('/api/share', require('./routes/share'));
+app.use('/api/admin', require('./routes/admin'));
 
 // ─── Health check ───
 app.get('/api/health', (req, res) => {

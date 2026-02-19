@@ -45,8 +45,11 @@ export default function TimelineCanvas({
     const canvas = canvasRef.current;
     if (!canvas) return { mx: 0, my: 0 };
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    // Utiliser les dimensions logiques (sans DPR) pour convertir les coords souris
+    const logicalW = canvas._logicalWidth || canvas.width;
+    const logicalH = canvas._logicalHeight || canvas.height;
+    const scaleX = logicalW / rect.width;
+    const scaleY = logicalH / rect.height;
     return {
       mx: (e.clientX - rect.left) * scaleX,
       my: (e.clientY - rect.top) * scaleY,

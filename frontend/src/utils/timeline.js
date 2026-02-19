@@ -36,27 +36,33 @@ const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
  * Rend la frise et retourne les bounding-boxes de tous les éléments interactifs.
  * @returns {{ events: HitBox[], periods: HitBox[] }}
  */
-export function renderTimeline(canvas, data, zoom = 1, highlight = null) {
+export function renderTimeline(canvas, data, zoom = 1, highlight = null, forceDpr = null) {
   const ctx = canvas.getContext('2d');
   const s = data.settings;
   const margin = { top: 60, right: 60, bottom: 140, left: 60 };
 
-  // 1. Taille du canvas
+  // 1. Taille du canvas (HiDPI / Retina)
+  const dpr = forceDpr ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
   const ps = getPageSize(s.format);
-  canvas.width = ps.width;
-  canvas.height = ps.height;
+  canvas.width = ps.width * dpr;
+  canvas.height = ps.height * dpr;
   canvas.style.width = (ps.width * zoom) + 'px';
   canvas.style.height = (ps.height * zoom) + 'px';
+  // Stocker les dimensions logiques pour le hit-testing et les coordonnées souris
+  canvas._logicalWidth = ps.width;
+  canvas._logicalHeight = ps.height;
+  // Appliquer le scale DPR — tout le dessin reste en coordonnées logiques
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   // 2. Fond
   ctx.fillStyle = s.bgColor || '#ffffff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, ps.width, ps.height);
 
   // 3. Titre
   ctx.fillStyle = s.lineColor || '#333';
   ctx.font = `bold 20px ${s.font || 'Arial'}`;
   ctx.textAlign = 'center';
-  ctx.fillText(data.title || '', canvas.width / 2, 35);
+  ctx.fillText(data.title || '', ps.width / 2, 35);
 
   // 4. Géométrie barre
   const geom = computeBarGeometry(canvas, s, margin);
@@ -86,13 +92,15 @@ export function renderTimeline(canvas, data, zoom = 1, highlight = null) {
 
 export function computeBarGeometry(canvas, s, margin) {
   if (!margin) margin = { top: 60, right: 60, bottom: 140, left: 60 };
+  const logicalW = canvas._logicalWidth || canvas.width;
+  const logicalH = canvas._logicalHeight || canvas.height;
   const x = margin.left;
-  const width = canvas.width - margin.left - margin.right;
-  const y = canvas.height * 0.62;
+  const width = logicalW - margin.left - margin.right;
+  const y = logicalH * 0.62;
   const height = s.barHeight || 40;
   const totalYears = (s.yearEnd || 2000) - (s.yearStart || 1900);
   const pxPerYear = totalYears > 0 ? width / totalYears : 1;
-  return { x, y, width, height, yearStart: s.yearStart, yearEnd: s.yearEnd, pxPerYear, canvasWidth: canvas.width, canvasHeight: canvas.height };
+  return { x, y, width, height, yearStart: s.yearStart, yearEnd: s.yearEnd, pxPerYear, canvasWidth: logicalW, canvasHeight: logicalH };
 }
 
 export function yearToX(year, geom) {
@@ -324,11 +332,9 @@ export function hitTest(canvas, mx, my, data) {
   const margin = { top: 60, right: 60, bottom: 140, left: 60 };
   const geom = computeBarGeometry(canvas, s, margin);
 
-  // Compute bounding boxes via off-screen render
+  // Compute bounding boxes via off-screen render (1x DPR pour le hit-testing)
   const offscreen = document.createElement('canvas');
-  offscreen.width = canvas.width;
-  offscreen.height = canvas.height;
-  const computed = renderTimeline(offscreen, data, 1);
+  const computed = renderTimeline(offscreen, data, 1, null, 1);
 
   // 1. Événements — check dot (priorité au point sur la barre)
   for (const evt of (data.events || [])) {
@@ -402,9 +408,8 @@ function drawHighlight(ctx, highlight, eventBoxes, periodBoxes) {
 export function generateThumbnail(data) {
   const c = document.createElement('canvas');
   const ps = getPageSize(data.settings?.format || 'A4');
-  c.width = ps.width;
-  c.height = ps.height;
-  renderTimeline(c, data, 1);
+  // Rendu à 1x DPR pour les miniatures (pas besoin de HiDPI)
+  renderTimeline(c, data, 1, null, 1);
   // Réduire à 300px de large
   const thumb = document.createElement('canvas');
   const ratio = 300 / c.width;

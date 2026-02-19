@@ -1,0 +1,14 @@
+{
+  "name": "frisechrono",
+  "version": "1.0.0",
+  "description": "Lancer le backend et le frontend FriseChrono",
+  "scripts": {
+    "dev": "concurrently --names \"back,front\" --prefix-colors \"cyan,green\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "dev:back": "npm run dev --prefix backend",
+    "dev:front": "npm run dev --prefix frontend",
+    "install:all": "npm install --prefix backend && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

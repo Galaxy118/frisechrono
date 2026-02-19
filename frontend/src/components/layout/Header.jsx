@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════════════════════ */
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Plus, User, LogOut, ChevronDown, LayoutGrid } from 'lucide-react';
+import { Search, Plus, User, LogOut, ChevronDown, LayoutGrid, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import AuthModal from '../auth/AuthModal';
 
@@ -76,8 +76,14 @@ export default function Header() {
                     onClick={() => setProfileDropdown(!profileDropdown)}
                     className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded-lg transition"
                   >
-                    <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                      {user?.username?.[0]?.toUpperCase() || 'U'}
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+                      {user?.avatar ? (
+                        <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-blue-500 flex items-center justify-center">
+                          {user?.username?.[0]?.toUpperCase() || 'U'}
+                        </div>
+                      )}
                     </div>
                     <span className="hidden md:inline text-sm text-gray-700">{user?.username}</span>
                     <ChevronDown size={14} className="text-gray-400" />
@@ -95,6 +101,15 @@ export default function Header() {
                       >
                         <User size={14} /> Mon profil
                       </Link>
+                      {user?.role === 'admin' && (
+                        <Link
+                          to="/admin"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50"
+                          onClick={() => setProfileDropdown(false)}
+                        >
+                          <Shield size={14} /> Administration
+                        </Link>
+                      )}
                       <hr className="my-1" />
                       <button
                         onClick={() => { logout(); setProfileDropdown(false); navigate('/'); }}

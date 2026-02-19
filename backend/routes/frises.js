@@ -101,10 +101,11 @@ router.post('/', async (req, res) => {
 // ─── GET /:id — Détail complet d'une frise ───
 router.get('/:id', async (req, res) => {
   try {
-    const frise = await Frise.findOne({
-      _id: req.params.id,
-      owner: req.userId
-    });
+    // Admin peut accéder à toutes les frises
+    const filter = req.user?.role === 'admin'
+      ? { _id: req.params.id }
+      : { _id: req.params.id, owner: req.userId };
+    const frise = await Frise.findOne(filter);
 
     if (!frise) {
       return res.status(404).json({ error: 'Frise introuvable' });
@@ -120,10 +121,11 @@ router.get('/:id', async (req, res) => {
 // ─── PUT /:id — Modifier une frise (sauvegarde complète) ───
 router.put('/:id', async (req, res) => {
   try {
-    const frise = await Frise.findOne({
-      _id: req.params.id,
-      owner: req.userId
-    });
+    // Admin peut modifier toutes les frises
+    const filter = req.user?.role === 'admin'
+      ? { _id: req.params.id }
+      : { _id: req.params.id, owner: req.userId };
+    const frise = await Frise.findOne(filter);
 
     if (!frise) {
       return res.status(404).json({ error: 'Frise introuvable' });
@@ -187,10 +189,10 @@ router.post('/:id/autosave', async (req, res) => {
 // ─── DELETE /:id — Supprimer une frise ───
 router.delete('/:id', async (req, res) => {
   try {
-    const frise = await Frise.findOneAndDelete({
-      _id: req.params.id,
-      owner: req.userId
-    });
+    const filter = req.user?.role === 'admin'
+      ? { _id: req.params.id }
+      : { _id: req.params.id, owner: req.userId };
+    const frise = await Frise.findOneAndDelete(filter);
 
     if (!frise) {
       return res.status(404).json({ error: 'Frise introuvable' });

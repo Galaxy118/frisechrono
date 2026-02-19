@@ -9,8 +9,10 @@ const authService = {
     return data;
   },
 
-  async login(email, password) {
-    const { data } = await api.post('/auth/login', { email, password });
+  async login(email, password, twoFactorCode) {
+    const payload = { email, password };
+    if (twoFactorCode) payload.twoFactorCode = twoFactorCode;
+    const { data } = await api.post('/auth/login', payload);
     return data;
   },
 
@@ -31,6 +33,22 @@ const authService = {
 
   async getPublicProfile(username) {
     const { data } = await api.get(`/auth/user/${username}`);
+    return data;
+  },
+
+  // ─── 2FA ───
+  async setup2FA() {
+    const { data } = await api.post('/auth/2fa/setup');
+    return data;
+  },
+
+  async enable2FA(code) {
+    const { data } = await api.post('/auth/2fa/enable', { code });
+    return data;
+  },
+
+  async disable2FA(password) {
+    const { data } = await api.post('/auth/2fa/disable', { password });
     return data;
   }
 };

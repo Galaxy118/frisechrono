@@ -59,4 +59,15 @@ const optionalAuth = async (req, res, next) => {
   next();
 };
 
-module.exports = { auth, optionalAuth };
+/**
+ * Middleware admin — nécessite auth + role === 'admin'.
+ * À utiliser APRÈS auth : router.use(auth, admin)
+ */
+const admin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
+  }
+  next();
+};
+
+module.exports = { auth, optionalAuth, admin };

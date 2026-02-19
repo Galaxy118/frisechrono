@@ -36,8 +36,11 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, [token]);
 
-  const login = useCallback(async (email, password) => {
-    const data = await authService.login(email, password);
+  const login = useCallback(async (email, password, twoFactorCode) => {
+    const data = await authService.login(email, password, twoFactorCode);
+    if (data.requiresTwoFactor) {
+      return data; // pas encore connecté, 2FA requis
+    }
     localStorage.setItem('fc_token', data.token);
     localStorage.setItem('fc_user', JSON.stringify(data.user));
     setToken(data.token);

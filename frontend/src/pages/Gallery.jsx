@@ -132,8 +132,8 @@ export default function Gallery() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {frises.map((frise) => (
               <div
-                key={frise._id}
-                onClick={() => navigate(`/gallery`)}
+                key={frise._id || frise.id}
+                onClick={() => navigate(`/view/${frise.id || frise._id}`)}
                 className="group bg-white rounded-xl border overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer"
               >
                 <div className="h-36 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center overflow-hidden">
@@ -157,7 +157,7 @@ export default function Gallery() {
                   )}
                   <div className="flex items-center gap-3 mt-3 text-xs text-gray-400">
                     <span className="flex items-center gap-0.5"><Eye size={12} /> {frise.views || 0}</span>
-                    <span className="flex items-center gap-0.5"><Heart size={12} /> {frise.likes?.length || 0}</span>
+                    <span className="flex items-center gap-0.5"><Heart size={12} /> {frise.likesCount ?? frise.likes?.length ?? 0}</span>
                     <span className="ml-auto">{timeAgo(frise.createdAt)}</span>
                   </div>
                 </div>

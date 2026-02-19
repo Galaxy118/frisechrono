@@ -1,18 +1,25 @@
 /* ═══════════════════════════════════════════════════════════
-   routes/auth.js — Authentification (inscription/connexion/profil)
+   routes/auth.js — Authentification (inscription/connexion/profil/2FA)
    
    POST /api/auth/register   → Inscription
    POST /api/auth/login      → Connexion
    GET  /api/auth/me         → Profil courant (auth)
    PUT  /api/auth/me         → Modifier profil (auth)
    PUT  /api/auth/password   → Changer mot de passe (auth)
+   POST /api/auth/2fa/setup  → Générer secret 2FA + QR code
+   POST /api/auth/2fa/enable → Vérifier code et activer 2FA
+   POST /api/auth/2fa/disable → Désactiver 2FA
+   POST /api/auth/2fa/verify → Vérifier code 2FA à la connexion
    ═══════════════════════════════════════════════════════════ */
 const express = require('express');
 const router = express.Router();
 const validator = require('validator');
+const crypto = require('crypto');
 const User = require('../models/User');
 const { generateToken } = require('../utils/token');
 const { auth } = require('../middleware/auth');
+const { TOTP, Secret } = require('otpauth');
+const QRCode = require('qrcode');
 
 // ─── POST /register — Inscription ───
 router.post('/register', async (req, res) => {
@@ -67,14 +74,14 @@ router.post('/register', async (req, res) => {
 // ─── POST /login — Connexion ───
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, twoFactorCode } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email et mot de passe requis' });
     }
 
-    // Trouver l'utilisateur (inclure le mot de passe pour comparaison)
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+    // Trouver l'utilisateur (inclure le mot de passe + secret 2FA pour comparaison)
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password +twoFactorSecret +twoFactorBackupCodes');
     if (!user) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
@@ -83,6 +90,45 @@ router.post('/login', async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    }
+
+    // ─── Vérification 2FA si activé ───
+    if (user.twoFactorEnabled) {
+      if (!twoFactorCode) {
+        // Mot de passe OK mais 2FA requis → renvoyer un flag
+        return res.status(200).json({
+          requiresTwoFactor: true,
+          message: 'Code 2FA requis'
+        });
+      }
+
+      // Vérifier le code TOTP
+      const totp = new TOTP({
+        issuer: 'FriseChrono',
+        label: user.email,
+        algorithm: 'SHA1',
+        digits: 6,
+        period: 30,
+        secret: Secret.fromBase32(user.twoFactorSecret)
+      });
+
+      const isValidToken = totp.validate({ token: twoFactorCode, window: 1 }) !== null;
+
+      // Vérifier aussi les codes de secours
+      let usedBackupCode = false;
+      if (!isValidToken && user.twoFactorBackupCodes && user.twoFactorBackupCodes.length > 0) {
+        const idx = user.twoFactorBackupCodes.indexOf(twoFactorCode);
+        if (idx !== -1) {
+          // Supprimer le code de secours utilisé
+          user.twoFactorBackupCodes.splice(idx, 1);
+          await user.save();
+          usedBackupCode = true;
+        }
+      }
+
+      if (!isValidToken && !usedBackupCode) {
+        return res.status(401).json({ error: 'Code 2FA invalide' });
+      }
     }
 
     // Générer token
@@ -174,6 +220,128 @@ router.get('/user/:username', async (req, res) => {
       }
     });
   } catch (err) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+//   2FA (Authentification à deux facteurs — TOTP)
+// ═══════════════════════════════════════════════════════════
+
+// ─── POST /2fa/setup — Générer un secret 2FA + QR code ───
+router.post('/2fa/setup', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('+twoFactorSecret');
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+    if (user.twoFactorEnabled) {
+      return res.status(400).json({ error: 'La 2FA est déjà activée' });
+    }
+
+    // Générer un nouveau secret
+    const secret = new Secret({ size: 20 });
+    const totp = new TOTP({
+      issuer: 'FriseChrono',
+      label: user.email,
+      algorithm: 'SHA1',
+      digits: 6,
+      period: 30,
+      secret
+    });
+
+    // Sauvegarder le secret (pas encore activé)
+    user.twoFactorSecret = secret.base32;
+    await user.save();
+
+    // Générer le QR code
+    const otpauthUrl = totp.toString();
+    const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
+
+    res.json({
+      secret: secret.base32,
+      qrCode: qrCodeDataUrl,
+      otpauthUrl
+    });
+  } catch (err) {
+    console.error('Erreur setup 2FA:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ─── POST /2fa/enable — Vérifier le code et activer la 2FA ───
+router.post('/2fa/enable', auth, async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Code requis' });
+
+    const user = await User.findById(req.userId).select('+twoFactorSecret');
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+    if (user.twoFactorEnabled) {
+      return res.status(400).json({ error: 'La 2FA est déjà activée' });
+    }
+    if (!user.twoFactorSecret) {
+      return res.status(400).json({ error: 'Aucun secret 2FA configuré. Lancez d\'abord /2fa/setup' });
+    }
+
+    // Vérifier le code
+    const totp = new TOTP({
+      issuer: 'FriseChrono',
+      label: user.email,
+      algorithm: 'SHA1',
+      digits: 6,
+      period: 30,
+      secret: Secret.fromBase32(user.twoFactorSecret)
+    });
+
+    const isValid = totp.validate({ token: code, window: 1 }) !== null;
+    if (!isValid) {
+      return res.status(400).json({ error: 'Code invalide. Vérifiez votre application d\'authentification.' });
+    }
+
+    // Générer des codes de secours
+    const backupCodes = Array.from({ length: 8 }, () =>
+      crypto.randomBytes(4).toString('hex').toUpperCase()
+    );
+
+    user.twoFactorEnabled = true;
+    user.twoFactorBackupCodes = backupCodes;
+    await user.save();
+
+    res.json({
+      message: '2FA activée avec succès',
+      backupCodes,
+      user: user.toSafeObject()
+    });
+  } catch (err) {
+    console.error('Erreur activation 2FA:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ─── POST /2fa/disable — Désactiver la 2FA ───
+router.post('/2fa/disable', auth, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: 'Mot de passe requis pour désactiver la 2FA' });
+
+    const user = await User.findById(req.userId).select('+password');
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Mot de passe incorrect' });
+    }
+
+    user.twoFactorEnabled = false;
+    user.twoFactorSecret = undefined;
+    user.twoFactorBackupCodes = undefined;
+    await user.save();
+
+    res.json({
+      message: '2FA désactivée',
+      user: user.toSafeObject()
+    });
+  } catch (err) {
+    console.error('Erreur désactivation 2FA:', err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

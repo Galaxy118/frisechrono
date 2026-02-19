@@ -37,6 +37,24 @@ const userSchema = new mongoose.Schema({
     maxlength: 500,
     default: ''
   },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
+  // ─── 2FA (TOTP) ───
+  twoFactorEnabled: {
+    type: Boolean,
+    default: false
+  },
+  twoFactorSecret: {
+    type: String,
+    select: false  // ne pas inclure dans les requêtes par défaut
+  },
+  twoFactorBackupCodes: {
+    type: [String],
+    select: false
+  },
   resetPasswordToken: String,
   resetPasswordExpires: Date
 }, {
@@ -64,6 +82,8 @@ userSchema.methods.toSafeObject = function() {
     email: this.email,
     avatar: this.avatar,
     bio: this.bio,
+    role: this.role,
+    twoFactorEnabled: this.twoFactorEnabled,
     createdAt: this.createdAt
   };
 };
