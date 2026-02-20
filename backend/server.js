@@ -4,17 +4,31 @@
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
+const setupSocket = require('./socket/handler');
 
 const app = express();
+const server = http.createServer(app);
 
 // ─── Connexion MongoDB ───
 connectDB();
 
+const corsOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+// ─── Socket.IO ───
+const io = new Server(server, {
+  cors: { origin: corsOrigin, credentials: true },
+  pingTimeout: 60000,
+  pingInterval: 25000,
+});
+setupSocket(io);
+
 // ─── Middlewares globaux ───
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: corsOrigin,
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' })); // les frises peuvent être volumineuses
@@ -29,6 +43,7 @@ app.use(rateLimit({
 // ─── Routes ───
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/frises', require('./routes/frises'));
+app.use('/api/frises', require('./routes/collaboration'));
 app.use('/api/gallery', require('./routes/gallery'));
 app.use('/api/share', require('./routes/share'));
 app.use('/api/admin', require('./routes/admin'));
@@ -48,6 +63,7 @@ app.use((err, req, res, next) => {
 
 // ─── Lancement ───
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`✓ Backend FriseChrono démarré sur http://localhost:${PORT}`);
+  console.log(`✓ Socket.IO actif`);
 });

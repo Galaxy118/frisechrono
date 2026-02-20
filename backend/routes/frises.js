@@ -40,13 +40,24 @@ router.get('/', async (req, res) => {
       query.title = { $regex: search, $options: 'i' };
     }
 
-    const frises = await Frise.find(query)
+    const ownFrises = await Frise.find(query)
       .sort(sort)
-      .select('title settings.yearStart settings.yearEnd events.length isPublic shareToken tags views thumbnail isDraft createdAt updatedAt')
+      .select('title settings.yearStart settings.yearEnd events.length isPublic shareToken tags views thumbnail isDraft collaborators createdAt updatedAt')
       .lean();
 
+    // Frises où l'utilisateur est collaborateur
+    let collabQuery = { 'collaborators.user': req.userId };
+    if (search) collabQuery.title = { $regex: search, $options: 'i' };
+    const collabFrises = await Frise.find(collabQuery)
+      .sort(sort)
+      .select('title settings.yearStart settings.yearEnd events.length isPublic shareToken tags views thumbnail isDraft owner collaborators createdAt updatedAt')
+      .populate('owner', 'username avatar')
+      .lean();
+
+    const allFrises = [...ownFrises, ...collabFrises];
+
     // Transformer en cartes résumées
-    const cards = frises.map(f => ({
+    const cards = allFrises.map(f => ({
       _id: f._id,
       id: f._id,
       title: f.title,
@@ -59,6 +70,9 @@ router.get('/', async (req, res) => {
       views: f.views,
       thumbnail: f.thumbnail,
       isDraft: f.isDraft,
+      isCollab: f.owner && f.owner._id ? true : false,
+      ownerName: f.owner?.username,
+      collaboratorCount: f.collaborators?.length || 0,
       createdAt: f.createdAt,
       updatedAt: f.updatedAt
     }));
@@ -101,17 +115,27 @@ router.post('/', async (req, res) => {
 // ─── GET /:id — Détail complet d'une frise ───
 router.get('/:id', async (req, res) => {
   try {
-    // Admin peut accéder à toutes les frises
-    const filter = req.user?.role === 'admin'
-      ? { _id: req.params.id }
-      : { _id: req.params.id, owner: req.userId };
-    const frise = await Frise.findOne(filter);
+    // Admin, owner ou collaborateur peut accéder
+    const frise = await Frise.findById(req.params.id);
 
     if (!frise) {
       return res.status(404).json({ error: 'Frise introuvable' });
     }
 
-    res.json({ frise });
+    const isOwner = frise.owner.toString() === req.userId.toString();
+    const isCollab = frise.collaborators.some(c => c.user.toString() === req.userId.toString());
+    const isAdmin = req.user?.role === 'admin';
+
+    if (!isOwner && !isCollab && !isAdmin) {
+      return res.status(404).json({ error: 'Frise introuvable' });
+    }
+
+    // Ajouter info sur le rôle de l'utilisateur courant
+    const friseObj = frise.toObject();
+    const collab = frise.collaborators.find(c => c.user.toString() === req.userId.toString());
+    friseObj.myRole = isOwner || isAdmin ? 'owner' : (collab?.role || 'viewer');
+
+    res.json({ frise: friseObj });
   } catch (err) {
     console.error('Erreur détail frise:', err);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -161,7 +185,10 @@ router.post('/:id/autosave', async (req, res) => {
   try {
     const frise = await Frise.findOne({
       _id: req.params.id,
-      owner: req.userId
+      $or: [
+        { owner: req.userId },
+        { 'collaborators.user': req.userId, 'collaborators.role': 'editor' }
+      ]
     });
 
     if (!frise) {

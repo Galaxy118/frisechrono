@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Save, Download, Upload, Share2, Undo2, Redo2, ZoomIn, ZoomOut,
   FileImage, FilePlus2, ArrowLeft, Loader2, Mouse, Hand, CalendarPlus,
-  RulerIcon, Trash2, Palette, ChevronDown, FileJson, Printer
+  RulerIcon, Trash2, Palette, ChevronDown, FileJson, Printer, Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -83,10 +83,12 @@ export default function EditorToolbar({
   title, saving, dirty,
   zoom, onZoomIn, onZoomOut, onZoomReset,
   onSave, onExportPNG, onExportJSON, onPrint, onImport, onNew, onShare,
+  onCollaborators,
   canUndo, canRedo, onUndo, onRedo,
   activeTool, onToolChange,
   quickColor, onQuickColorChange,
   selectedElement, onDeleteSelected,
+  collabUsers = [], isReadOnly,
 }) {
   const navigate = useNavigate();
   const importRef = useRef(null);
@@ -131,6 +133,33 @@ export default function EditorToolbar({
         <Sep />
 
         <TBtn icon={Share2} label="Partager" onClick={onShare} />
+        {onCollaborators && (
+          <TBtn icon={Users} label="Collaborateurs" onClick={onCollaborators} />
+        )}
+
+        {/* Présence : avatars des collaborateurs connectés */}
+        {collabUsers.length > 0 && (
+          <>
+            <Sep />
+            <div className="flex items-center -space-x-1.5">
+              {collabUsers.slice(0, 5).map((u) => (
+                <div
+                  key={u.id}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ring-white"
+                  style={{ backgroundColor: u.color || '#6b7280' }}
+                  title={u.username}
+                >
+                  {(u.username || '?')[0].toUpperCase()}
+                </div>
+              ))}
+              {collabUsers.length > 5 && (
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-gray-600 bg-gray-200 ring-2 ring-white">
+                  +{collabUsers.length - 5}
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Spacer */}
         <div className="flex-1" />

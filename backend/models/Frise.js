@@ -90,6 +90,13 @@ const friseSchema = new mongoose.Schema({
     default: []
   },
 
+  // ─── Collaborateurs ───
+  collaborators: [{
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    role: { type: String, enum: ['editor', 'viewer'], default: 'editor' },
+    addedAt: { type: Date, default: Date.now }
+  }],
+
   // ─── Partage & publication ───
   isPublic: {
     type: Boolean,
@@ -134,6 +141,7 @@ friseSchema.index({ isPublic: 1, createdAt: -1 });
 friseSchema.index({ isPublic: 1, views: -1 });
 friseSchema.index({ tags: 1, isPublic: 1 });
 friseSchema.index({ title: 'text', tags: 'text' });  // recherche full-text
+friseSchema.index({ 'collaborators.user': 1 });  // recherche par collaborateurs
 
 // ─── Méthode : sauvegarder une version ───
 friseSchema.methods.pushVersion = function() {

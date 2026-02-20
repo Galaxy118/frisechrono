@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { defaultFriseData, generateId } from '../utils/format';
 import { generateThumbnail } from '../utils/timeline';
 import friseService from '../services/friseService';
+import socketService from '../services/socketService';
 
 import EditorToolbar from '../components/editor/EditorToolbar';
 import PropertiesPanel from '../components/editor/PropertiesPanel';
@@ -18,6 +19,7 @@ import TimelineCanvas from '../components/editor/TimelineCanvas';
 import EventModal from '../components/editor/EventModal';
 import PeriodModal from '../components/editor/PeriodModal';
 import ShareModal from '../components/editor/ShareModal';
+import CollaboratorModal from '../components/editor/CollaboratorModal';
 
 const MAX_UNDO = 40;
 
@@ -49,6 +51,12 @@ export default function Editor() {
   const [eventModal, setEventModal] = useState({ open: false, event: null });
   const [periodModal, setPeriodModal] = useState({ open: false, period: null });
   const [shareOpen, setShareOpen] = useState(false);
+  const [collabModalOpen, setCollabModalOpen] = useState(false);
+
+  // ─── Collaboration temps réel ───
+  const [myRole, setMyRole] = useState('owner');        // owner | editor | viewer
+  const [collabUsers, setCollabUsers] = useState([]);   // utilisateurs connectés
+  const isRemoteUpdate = useRef(false);                 // éviter boucle de broadcast
 
   // ─── Autosave timer ───
   const autosaveTimer = useRef(null);
@@ -70,6 +78,9 @@ export default function Editor() {
         });
         setIsPublic(frise.isPublic || false);
         setFriseId(frise._id);
+        // Rôle collaboratif
+        if (res.myRole) setMyRole(res.myRole);
+        else setMyRole('owner');
       } catch (err) {
         console.error('Erreur chargement frise:', err);
         navigate('/');
@@ -77,6 +88,38 @@ export default function Editor() {
       setLoading(false);
     })();
   }, [id]);
+
+  // ─── Socket.IO : connexion et abonnement ───
+  useEffect(() => {
+    if (!friseId || !user) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    socketService.connect(token);
+    socketService.joinFrise(friseId);
+
+    // Recevoir les mises à jour d'un collaborateur
+    const handleRemoteUpdate = (payload) => {
+      isRemoteUpdate.current = true;
+      setData(payload);
+      isRemoteUpdate.current = false;
+    };
+
+    // Recevoir la liste de présence
+    const handlePresence = (users) => {
+      setCollabUsers(users);
+    };
+
+    socketService.on('frise-update', handleRemoteUpdate);
+    socketService.on('presence', handlePresence);
+
+    return () => {
+      socketService.off('frise-update', handleRemoteUpdate);
+      socketService.off('presence', handlePresence);
+      socketService.leaveFrise();
+    };
+  }, [friseId, user]);
 
   // ─── Modifier données avec historique ───
   const updateData = useCallback((newData) => {
@@ -87,6 +130,11 @@ export default function Editor() {
     skipHistoryRef.current = false;
     setData(newData);
     setDirty(true);
+
+    // Diffuser aux collaborateurs si c'est un changement local
+    if (!isRemoteUpdate.current) {
+      socketService.sendUpdate(newData);
+    }
 
     // Autosave après 5s d'inactivité
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
@@ -405,8 +453,17 @@ export default function Editor() {
     );
   }
 
+  const isReadOnly = myRole === 'viewer';
+
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
+      {/* Bandeau lecture seule */}
+      {isReadOnly && (
+        <div className="bg-amber-100 text-amber-800 text-xs text-center py-1 font-medium">
+          Mode lecture seule — vous êtes observateur sur cette frise
+        </div>
+      )}
+
       {/* Toolbar */}
       <EditorToolbar
         title={data.title}
@@ -416,23 +473,26 @@ export default function Editor() {
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
         onZoomReset={zoomReset}
-        onSave={handleSave}
+        onSave={isReadOnly ? undefined : handleSave}
         onExportPNG={handleExportPNG}
         onExportJSON={handleExportJSON}
         onPrint={handlePrint}
-        onImport={handleImport}
-        onNew={handleNew}
+        onImport={isReadOnly ? undefined : handleImport}
+        onNew={isReadOnly ? undefined : handleNew}
         onShare={() => setShareOpen(true)}
-        canUndo={history.length > 0}
-        canRedo={future.length > 0}
-        onUndo={undo}
-        onRedo={redo}
+        onCollaborators={friseId ? () => setCollabModalOpen(true) : undefined}
+        canUndo={!isReadOnly && history.length > 0}
+        canRedo={!isReadOnly && future.length > 0}
+        onUndo={isReadOnly ? undefined : undo}
+        onRedo={isReadOnly ? undefined : redo}
         activeTool={activeTool}
-        onToolChange={setActiveTool}
+        onToolChange={isReadOnly ? undefined : setActiveTool}
         quickColor={quickColor}
-        onQuickColorChange={handleQuickColorChange}
+        onQuickColorChange={isReadOnly ? undefined : handleQuickColorChange}
         selectedElement={selectedElement}
-        onDeleteSelected={handleDeleteSelected}
+        onDeleteSelected={isReadOnly ? undefined : handleDeleteSelected}
+        collabUsers={collabUsers}
+        isReadOnly={isReadOnly}
       />
 
       {/* Corps du contenu */}
@@ -492,6 +552,12 @@ export default function Editor() {
         isPublic={isPublic}
         onTogglePublic={handleTogglePublic}
         onClose={() => setShareOpen(false)}
+      />
+      <CollaboratorModal
+        isOpen={collabModalOpen}
+        friseId={friseId}
+        myRole={myRole}
+        onClose={() => setCollabModalOpen(false)}
       />
     </div>
   );
