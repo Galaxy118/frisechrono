@@ -72,6 +72,48 @@ const friseService = {
     return data;
   },
 
+  // ─── Copier une frise publique ───
+  async copyPublicFrise(id) {
+    const { data } = await api.post(`/gallery/${id}/copy`);
+    return data;
+  },
+
+  // ─── Commentaires & suggestions ───
+  async getComments(friseId, params = {}) {
+    const { data } = await api.get(`/gallery/${friseId}/comments`, { params });
+    return data;
+  },
+
+  async addComment(friseId, text, type = 'comment') {
+    const { data } = await api.post(`/gallery/${friseId}/comments`, { text, type });
+    return data;
+  },
+
+  async editComment(commentId, text) {
+    const { data } = await api.put(`/gallery/comments/${commentId}`, { text });
+    return data;
+  },
+
+  async deleteComment(commentId) {
+    const { data } = await api.delete(`/gallery/comments/${commentId}`);
+    return data;
+  },
+
+  async replyToComment(commentId, text) {
+    const { data } = await api.post(`/gallery/comments/${commentId}/reply`, { text });
+    return data;
+  },
+
+  async likeComment(commentId) {
+    const { data } = await api.put(`/gallery/comments/${commentId}/like`);
+    return data;
+  },
+
+  async setSuggestionStatus(commentId, status) {
+    const { data } = await api.put(`/gallery/comments/${commentId}/status`, { status });
+    return data;
+  },
+
   // ─── Partage ───
   async createShareLink(friseId, label = '', expiresIn = null) {
     const { data } = await api.post(`/share/${friseId}`, { label, expiresIn });

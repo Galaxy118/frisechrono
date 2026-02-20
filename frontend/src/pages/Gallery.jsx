@@ -3,13 +3,15 @@
    ═══════════════════════════════════════════════════════════ */
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Filter, Eye, Heart, Clock, Globe, Tag, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Search, Filter, Eye, Heart, Clock, Globe, Tag, ChevronLeft, ChevronRight, Loader2, MessageCircle, Copy } from 'lucide-react';
 import friseService from '../services/friseService';
+import { useAuth } from '../context/AuthContext';
 import { timeAgo } from '../utils/format';
 
 export default function Gallery() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isAuthenticated } = useAuth();
 
   const [frises, setFrises] = useState([]);
   const [tags, setTags] = useState([]);
@@ -22,6 +24,20 @@ export default function Gallery() {
   const [sort, setSort] = useState(searchParams.get('sort') || 'recent');
 
   const limit = 12;
+  const [copyingId, setCopyingId] = useState(null);
+
+  const handleCopyFrise = async (e, friseId) => {
+    e.stopPropagation();
+    if (copyingId) return;
+    setCopyingId(friseId);
+    try {
+      await friseService.copyPublicFrise(friseId);
+      // Petit feedback visuel — le bouton restera disabled quelques secondes
+      setTimeout(() => setCopyingId(null), 2000);
+    } catch {
+      setCopyingId(null);
+    }
+  };
 
   useEffect(() => {
     loadTags();
@@ -158,7 +174,19 @@ export default function Gallery() {
                   <div className="flex items-center gap-3 mt-3 text-xs text-gray-400">
                     <span className="flex items-center gap-0.5"><Eye size={12} /> {frise.views || 0}</span>
                     <span className="flex items-center gap-0.5"><Heart size={12} /> {frise.likesCount ?? frise.likes?.length ?? 0}</span>
-                    <span className="ml-auto">{timeAgo(frise.createdAt)}</span>
+                    <span className="flex items-center gap-0.5"><MessageCircle size={12} /> {frise.commentCount || 0}</span>
+                    {isAuthenticated && (
+                      <button
+                        onClick={(e) => handleCopyFrise(e, frise.id || frise._id)}
+                        disabled={copyingId === (frise.id || frise._id)}
+                        className="flex items-center gap-0.5 hover:text-emerald-600 transition ml-auto"
+                        title="Copier dans votre compte"
+                      >
+                        <Copy size={12} />
+                        {copyingId === (frise.id || frise._id) ? 'Copié !' : ''}
+                      </button>
+                    )}
+                    <span className={isAuthenticated ? '' : 'ml-auto'}>{timeAgo(frise.createdAt)}</span>
                   </div>
                 </div>
               </div>

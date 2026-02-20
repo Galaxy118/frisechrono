@@ -10,6 +10,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Frise = require('../models/Frise');
+const Comment = require('../models/Comment');
 const { optionalAuth } = require('../middleware/auth');
 
 router.param('id', (req, res, next, id) => {
@@ -69,6 +70,15 @@ router.get('/', optionalAuth, async (req, res) => {
       Frise.countDocuments(filter)
     ]);
 
+    // Compteurs de commentaires par frise
+    const friseIds = frises.map(f => f._id);
+    const commentCounts = await Comment.aggregate([
+      { $match: { frise: { $in: friseIds } } },
+      { $group: { _id: '$frise', count: { $sum: 1 } } }
+    ]);
+    const commentMap = {};
+    commentCounts.forEach(c => { commentMap[c._id.toString()] = c.count; });
+
     const cards = frises.map(f => ({
       id: f._id,
       title: f.title,
@@ -79,6 +89,7 @@ router.get('/', optionalAuth, async (req, res) => {
       tags: f.tags,
       views: f.views,
       likesCount: f.likes?.length || 0,
+      commentCount: commentMap[f._id.toString()] || 0,
       thumbnail: f.thumbnail,
       shareToken: f.shareToken,
       createdAt: f.createdAt
@@ -196,12 +207,15 @@ router.get('/:id', optionalAuth, async (req, res) => {
       await frise.save();
     }
 
+    const commentCount = await Comment.countDocuments({ frise: frise._id });
+
     res.json({
       frise: {
         ...frise.toObject(),
         isOwner,
         likesCount: frise.likes.length,
-        isLiked: req.userId ? frise.likes.some(id => id.toString() === req.userId.toString()) : false
+        isLiked: req.userId ? frise.likes.some(id => id.toString() === req.userId.toString()) : false,
+        commentCount
       }
     });
   } catch (err) {

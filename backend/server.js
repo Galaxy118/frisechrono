@@ -45,6 +45,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/frises', require('./routes/frises'));
 app.use('/api/frises', require('./routes/collaboration'));
 app.use('/api/gallery', require('./routes/gallery'));
+app.use('/api/gallery', require('./routes/comments'));
 app.use('/api/share', require('./routes/share'));
 app.use('/api/admin', require('./routes/admin'));
 
