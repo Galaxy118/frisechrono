@@ -414,9 +414,9 @@ export default function ViewFrise() {
 
       {/* Contenu principal */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Canvas lecture seule */}
+        {/* Canvas lecture seule — navigation pan/zoom comme l'éditeur */}
         <div className="flex-1">
-          <TimelineCanvas data={data} zoom={zoom} />
+          <TimelineCanvas data={data} zoom={zoom} readOnly onZoomChange={setZoom} />
         </div>
 
         {/* Panneau commentaires / suggestions */}

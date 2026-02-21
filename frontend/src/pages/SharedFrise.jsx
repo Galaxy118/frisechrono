@@ -97,8 +97,8 @@ export default function SharedFrise() {
         </div>
       </div>
 
-      {/* Canvas */}
-      <TimelineCanvas data={data} zoom={zoom} />
+      {/* Canvas — navigation pan/zoom en lecture seule */}
+      <TimelineCanvas data={data} zoom={zoom} readOnly onZoomChange={setZoom} />
     </div>
   );
 }

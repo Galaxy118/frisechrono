@@ -13,6 +13,8 @@ import {
 export default function TimelineCanvas({
   data, zoom = 1,
   activeTool = 'select',
+  readOnly = false,
+  onZoomChange,
   selectedElement,
   onSelectElement,
   onEventClick,
@@ -33,6 +35,10 @@ export default function TimelineCanvas({
 
   const [cursor, setCursor] = useState('default');
   const [tooltip, setTooltip] = useState(null); // { x, y, text }
+  const touchRef = useRef(null); // { startDist, startZoom, startScrollX, startScrollY, startCX, startCY }
+
+  // En mode readOnly, le tool effectif est toujours 'pan'
+  const effectiveTool = readOnly ? 'pan' : activeTool;
 
   // ─── Redessiner ───
   useEffect(() => {
@@ -119,7 +125,7 @@ export default function TimelineCanvas({
     if (!geom) return;
 
     // Mode PAN
-    if (activeTool === 'pan' || e.button === 1 || (e.button === 0 && e.spaceKey)) {
+    if (effectiveTool === 'pan' || e.button === 1 || (e.button === 0 && e.spaceKey)) {
       const container = containerRef.current;
       if (!container) return;
       panRef.current = {
@@ -132,8 +138,11 @@ export default function TimelineCanvas({
       return;
     }
 
+    // Mode readOnly → pas de sélection/drag
+    if (readOnly) return;
+
     // Mode placement événement rapide
-    if (activeTool === 'event') {
+    if (effectiveTool === 'event') {
       const year = Math.round(xToYear(mx, geom));
       if (year >= geom.yearStart && year <= geom.yearEnd) {
         onAddEventAtYear?.(year);
@@ -142,7 +151,7 @@ export default function TimelineCanvas({
     }
 
     // Mode dessin période
-    if (activeTool === 'period') {
+    if (effectiveTool === 'period') {
       const year = Math.round(xToYear(mx, geom));
       if (year >= geom.yearStart && year <= geom.yearEnd) {
         periodDrawRef.current = { startYear: year };
@@ -175,7 +184,7 @@ export default function TimelineCanvas({
     } else {
       onSelectElement?.(null);
     }
-  }, [data, activeTool, mouseToCanvas, getGeom, onSelectElement, onEventClick, onAddEventAtYear]);
+  }, [data, effectiveTool, readOnly, mouseToCanvas, getGeom, onSelectElement, onEventClick, onAddEventAtYear]);
 
   // ─── MOUSE MOVE ───
   const handleMouseMove = useCallback((e) => {
@@ -244,8 +253,8 @@ export default function TimelineCanvas({
     }
 
     // Hover cursor
-    if (activeTool === 'pan') { setCursor('grab'); return; }
-    if (activeTool === 'event' || activeTool === 'period') { setCursor('crosshair'); return; }
+    if (effectiveTool === 'pan') { setCursor('grab'); return; }
+    if (effectiveTool === 'event' || effectiveTool === 'period') { setCursor('crosshair'); return; }
 
     const hit = hitTest(canvas, mx, my, data);
     if (hit) {
@@ -255,14 +264,14 @@ export default function TimelineCanvas({
     } else {
       setCursor('default');
     }
-  }, [data, activeTool, mouseToCanvas, getGeom, buildDragPreview, zoom]);
+  }, [data, effectiveTool, mouseToCanvas, getGeom, buildDragPreview, zoom]);
 
   // ─── MOUSE UP ───
   const handleMouseUp = useCallback((e) => {
     // Pan end
     if (panRef.current) {
       panRef.current = null;
-      setCursor(activeTool === 'pan' ? 'grab' : 'default');
+      setCursor(effectiveTool === 'pan' ? 'grab' : 'default');
       return;
     }
 
@@ -329,7 +338,7 @@ export default function TimelineCanvas({
       setCursor('default');
       setTooltip(null);
     }
-  }, [activeTool, mouseToCanvas, getGeom, onMoveEvent, onMoveEventLabel, onMovePeriod, onResizePeriod, onAddPeriodAtYears, data, zoom]);
+  }, [effectiveTool, mouseToCanvas, getGeom, onMoveEvent, onMoveEventLabel, onMovePeriod, onResizePeriod, onAddPeriodAtYears, data, zoom]);
 
   // ─── Double-clic → ouvrir modal édition ───
   const handleDblClick = useCallback((e) => {
@@ -342,10 +351,72 @@ export default function TimelineCanvas({
     }
   }, [data, mouseToCanvas, onEventClick]);
 
-  // ─── Wheel zoom ───
+  // ─── Wheel zoom (Ctrl/Meta + molette) ───
   const handleWheel = useCallback((e) => {
-    // Do nothing — let the container scroll naturally
+    if ((e.ctrlKey || e.metaKey) && onZoomChange) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      onZoomChange(z => Math.max(0.3, Math.min(3, z + delta)));
+    }
+    // Sinon, laisse le scroll naturel du conteneur
+  }, [onZoomChange]);
+
+  // ─── Touch pan/pinch-zoom ───
+  const handleTouchStart = useCallback((e) => {
+    const container = containerRef.current;
+    if (!container) return;
+    if (e.touches.length === 1) {
+      // Single finger → pan
+      touchRef.current = {
+        mode: 'pan',
+        startScrollX: container.scrollLeft,
+        startScrollY: container.scrollTop,
+        startCX: e.touches[0].clientX,
+        startCY: e.touches[0].clientY,
+      };
+    } else if (e.touches.length === 2 && onZoomChange) {
+      // Two fingers → pinch zoom
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      touchRef.current = {
+        mode: 'pinch',
+        startDist: Math.sqrt(dx * dx + dy * dy),
+        startZoom: zoom,
+      };
+    }
+  }, [zoom, onZoomChange]);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!touchRef.current) return;
+    if (touchRef.current.mode === 'pan' && e.touches.length === 1) {
+      const container = containerRef.current;
+      if (!container) return;
+      container.scrollLeft = touchRef.current.startScrollX - (e.touches[0].clientX - touchRef.current.startCX);
+      container.scrollTop = touchRef.current.startScrollY - (e.touches[0].clientY - touchRef.current.startCY);
+    } else if (touchRef.current.mode === 'pinch' && e.touches.length === 2 && onZoomChange) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const scale = dist / touchRef.current.startDist;
+      const newZoom = Math.max(0.3, Math.min(3, touchRef.current.startZoom * scale));
+      onZoomChange(() => newZoom);
+    }
+  }, [onZoomChange]);
+
+  const handleTouchEnd = useCallback(() => {
+    touchRef.current = null;
   }, []);
+
+  // Prevent default on wheel when ctrl/meta is held (avoid browser zoom)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const prevent = (e) => { if ((e.ctrlKey || e.metaKey) && onZoomChange) e.preventDefault(); };
+    el.addEventListener('wheel', prevent, { passive: false });
+    return () => el.removeEventListener('wheel', prevent);
+  }, [onZoomChange]);
 
   // Global listeners for move/up (when mouse leaves canvas during drag)
   useEffect(() => {
@@ -370,8 +441,12 @@ export default function TimelineCanvas({
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
-          onDoubleClick={handleDblClick}
-          style={{ cursor }}
+          onDoubleClick={readOnly ? undefined : handleDblClick}
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          style={{ cursor, touchAction: 'none' }}
           className="block"
         />
       </div>
