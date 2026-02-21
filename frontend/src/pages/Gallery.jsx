@@ -82,10 +82,10 @@ export default function Gallery() {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 min-h-[calc(100vh-64px)]">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8 min-h-[calc(100vh-64px)]">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-extrabold flex items-center gap-2"><Globe size={24} className="text-blue-600" /> Galerie publique</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-extrabold flex items-center gap-2"><Globe size={24} className="text-blue-600" /> Galerie publique</h1>
         <p className="text-gray-500 mt-1">Explorez les frises créées par la communauté</p>
       </div>
 

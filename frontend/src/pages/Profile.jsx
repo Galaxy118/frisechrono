@@ -217,9 +217,9 @@ export default function Profile() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8 min-h-[calc(100vh-64px)]">
+    <div className="max-w-5xl mx-auto px-3 sm:px-6 py-6 sm:py-8 min-h-[calc(100vh-64px)]">
       {/* En-tête profil */}
-      <div className="flex items-center gap-5 mb-8">
+      <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-5 mb-6 sm:mb-8">
         <div className="relative group">
           {profile?.avatar ? (
             <img
@@ -251,8 +251,8 @@ export default function Profile() {
             </>
           )}
         </div>
-        <div>
-          <h1 className="text-2xl font-extrabold">{profile?.username}</h1>
+        <div className="text-center sm:text-left">
+          <h1 className="text-xl sm:text-2xl font-extrabold">{profile?.username}</h1>
           {profile?.bio && <p className="text-sm text-gray-500 mt-0.5">{profile.bio}</p>}
           <p className="text-xs text-gray-400 mt-1">{frises.length} frise{frises.length > 1 ? 's' : ''}</p>
         </div>
@@ -269,24 +269,24 @@ export default function Profile() {
 
       {/* Onglets (profil perso uniquement) */}
       {isOwnProfile && (
-        <div className="flex gap-1 border-b mb-6">
+        <div className="flex gap-1 border-b mb-6 overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setTab('frises')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition ${tab === 'frises' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
           >
-            <Clock size={14} className="inline mr-1" /> Mes frises
+            <Clock size={14} className="inline mr-1" /> <span className="whitespace-nowrap">Mes frises</span>
           </button>
           <button
             onClick={() => setTab('settings')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition ${tab === 'settings' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+            className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition shrink-0 ${tab === 'settings' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
           >
-            <Settings size={14} className="inline mr-1" /> Paramètres
+            <Settings size={14} className="inline mr-1" /> <span className="whitespace-nowrap">Paramètres</span>
           </button>
           <button
             onClick={() => setTab('security')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition ${tab === 'security' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+            className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition shrink-0 ${tab === 'security' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
           >
-            <ShieldCheck size={14} className="inline mr-1" /> Sécurité
+            <ShieldCheck size={14} className="inline mr-1" /> <span className="whitespace-nowrap">Sécurité</span>
           </button>
         </div>
       )}

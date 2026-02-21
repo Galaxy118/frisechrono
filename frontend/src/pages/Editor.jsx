@@ -12,6 +12,7 @@ import { defaultFriseData, generateId } from '../utils/format';
 import { generateThumbnail } from '../utils/timeline';
 import friseService from '../services/friseService';
 import socketService from '../services/socketService';
+import { PanelLeftOpen } from 'lucide-react';
 
 import EditorToolbar from '../components/editor/EditorToolbar';
 import PropertiesPanel from '../components/editor/PropertiesPanel';
@@ -52,6 +53,7 @@ export default function Editor() {
   const [periodModal, setPeriodModal] = useState({ open: false, period: null });
   const [shareOpen, setShareOpen] = useState(false);
   const [collabModalOpen, setCollabModalOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false); // mobile properties panel
 
   // ─── Collaboration temps réel ───
   const [myRole, setMyRole] = useState('owner');        // owner | editor | viewer
@@ -493,19 +495,32 @@ export default function Editor() {
         onDeleteSelected={isReadOnly ? undefined : handleDeleteSelected}
         collabUsers={collabUsers}
         isReadOnly={isReadOnly}
+        onTogglePanel={() => setPanelOpen(v => !v)}
       />
 
       {/* Corps du contenu */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Panneau de propriétés */}
-        <PropertiesPanel
-          data={data}
-          onChange={updateData}
-          onApply={() => setData({ ...data })}
-          onAddEvent={() => setEventModal({ open: true, event: null })}
-          onEditEvent={(evt) => setEventModal({ open: true, event: evt })}
-          onAddPeriod={() => setPeriodModal({ open: true, period: null })}
-        />
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Overlay mobile pour panneau propriétés */}
+        {panelOpen && (
+          <div className="md:hidden fixed inset-0 bg-black/30 z-40" onClick={() => setPanelOpen(false)} />
+        )}
+
+        {/* Panneau de propriétés — desktop: toujours visible, mobile: slide-in */}
+        <div className={`
+          fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transform transition-transform duration-200
+          md:static md:z-auto md:transform-none md:transition-none
+          ${panelOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}>
+          <PropertiesPanel
+            data={data}
+            onChange={updateData}
+            onApply={() => { setData({ ...data }); setPanelOpen(false); }}
+            onAddEvent={() => { setEventModal({ open: true, event: null }); setPanelOpen(false); }}
+            onEditEvent={(evt) => { setEventModal({ open: true, event: evt }); setPanelOpen(false); }}
+            onAddPeriod={() => { setPeriodModal({ open: true, period: null }); setPanelOpen(false); }}
+            onClose={() => setPanelOpen(false)}
+          />
+        </div>
 
         {/* Canvas interactif */}
         <TimelineCanvas

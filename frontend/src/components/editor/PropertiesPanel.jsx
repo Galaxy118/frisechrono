@@ -4,7 +4,7 @@
    Contient les sections : Document, Barre de temps, Césures, Événements.
    ═══════════════════════════════════════════════════════════ */
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, X, Check } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, X, Check, PanelLeftClose } from 'lucide-react';
 import { truncate } from '../../utils/format';
 
 // ─── Section pliable ───
@@ -47,6 +47,7 @@ export default function PropertiesPanel({
   onAddEvent,
   onEditEvent,
   onAddPeriod,
+  onClose,
 }) {
   const s = data.settings;
   const [cesureStart, setCesureStart] = useState('');
@@ -80,7 +81,16 @@ export default function PropertiesPanel({
   };
 
   return (
-    <aside className="w-72 min-w-[260px] max-w-[400px] bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden shrink-0">
+    <aside className="w-full md:w-72 md:min-w-[260px] md:max-w-[400px] h-full bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden shrink-0">
+      {/* Header mobile avec bouton fermer */}
+      {onClose && (
+        <div className="md:hidden flex items-center justify-between px-3 py-2 border-b bg-white">
+          <span className="text-sm font-bold text-gray-700">Propriétés</span>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg">
+            <PanelLeftClose size={16} />
+          </button>
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto">
         {/* ── Document ── */}
         <Section title="Document">

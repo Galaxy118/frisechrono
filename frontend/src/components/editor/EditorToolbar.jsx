@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Save, Download, Upload, Share2, Undo2, Redo2, ZoomIn, ZoomOut,
   FileImage, FilePlus2, ArrowLeft, Loader2, Mouse, Hand, CalendarPlus,
-  RulerIcon, Trash2, Palette, ChevronDown, FileJson, Printer, Users
+  RulerIcon, Trash2, Palette, ChevronDown, FileJson, Printer, Users, PanelLeftOpen
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -34,7 +34,7 @@ function TBtn({ icon: Icon, label, active, disabled, accent, onClick, children, 
 }
 
 /* ─── Séparateur vertical ─── */
-function Sep() { return <div className="w-px h-5 bg-gray-200 mx-0.5 shrink-0" />; }
+function Sep({ className = '' }) { return <div className={`w-px h-5 bg-gray-200 mx-0.5 shrink-0 ${className}`} />; }
 
 /* ─── Menu déroulant export ─── */
 function ExportMenu({ onExportPNG, onExportJSON, onPrint }) {
@@ -89,6 +89,7 @@ export default function EditorToolbar({
   quickColor, onQuickColorChange,
   selectedElement, onDeleteSelected,
   collabUsers = [], isReadOnly,
+  onTogglePanel,
 }) {
   const navigate = useNavigate();
   const importRef = useRef(null);
@@ -107,23 +108,31 @@ export default function EditorToolbar({
   return (
     <div className="bg-white border-b shrink-0 select-none">
       {/* ── Rangée 1 : Fichier & Save ── */}
-      <div className="h-10 flex items-center px-2 gap-0.5 border-b border-gray-100">
-        <button onClick={() => navigate('/')} className="p-1.5 hover:bg-gray-100 rounded-lg mr-1" title="Retour accueil">
+      <div className="h-10 flex items-center px-2 gap-0.5 border-b border-gray-100 overflow-x-auto scrollbar-hide">
+        <button onClick={() => navigate('/')} className="p-1.5 hover:bg-gray-100 rounded-lg mr-1 shrink-0" title="Retour accueil">
           <ArrowLeft size={15} />
         </button>
-        <span className="text-sm font-semibold truncate max-w-[180px] mr-1">{title || 'Sans titre'}</span>
+
+        {/* Toggle panneau propriétés — mobile only */}
+        {onTogglePanel && (
+          <button onClick={onTogglePanel} className="md:hidden p-1.5 hover:bg-gray-100 rounded-lg mr-1 shrink-0" title="Propriétés">
+            <PanelLeftOpen size={15} />
+          </button>
+        )}
+
+        <span className="text-sm font-semibold truncate max-w-[120px] sm:max-w-[180px] mr-1">{title || 'Sans titre'}</span>
         {dirty && <span className="w-2 h-2 bg-orange-400 rounded-full shrink-0" title="Modifications non sauvegardées" />}
 
         <Sep />
 
-        <TBtn icon={FilePlus2} label="Nouveau" onClick={onNew} />
+        <TBtn icon={FilePlus2} label="Nouveau" onClick={onNew} className="hidden sm:flex" />
         <TBtn icon={Save} label="Sauvegarder" accent onClick={onSave} disabled={saving}>
           {saving && <Loader2 size={12} className="animate-spin" />}
         </TBtn>
 
         <Sep />
 
-        <label className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded-md hover:bg-gray-100 cursor-pointer text-gray-700" title="Importer JSON">
+        <label className="hidden sm:flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded-md hover:bg-gray-100 cursor-pointer text-gray-700" title="Importer JSON">
           <Upload size={14} />
           <span className="hidden lg:inline">Importer</span>
           <input ref={importRef} type="file" accept=".json" onChange={handleImportFile} className="sr-only" />
@@ -134,13 +143,13 @@ export default function EditorToolbar({
 
         <TBtn icon={Share2} label="Partager" onClick={onShare} />
         {onCollaborators && (
-          <TBtn icon={Users} label="Collaborateurs" onClick={onCollaborators} />
+          <TBtn icon={Users} label="Collaborateurs" onClick={onCollaborators} className="hidden sm:flex" />
         )}
 
         {/* Présence : avatars des collaborateurs connectés */}
         {collabUsers.length > 0 && (
           <>
-            <Sep />
+            <Sep className="hidden sm:block" />
             <div className="flex items-center -space-x-1.5">
               {collabUsers.slice(0, 5).map((u) => (
                 <div
@@ -170,7 +179,7 @@ export default function EditorToolbar({
       </div>
 
       {/* ── Rangée 2 : Outils interactifs & Zoom ── */}
-      <div className="h-9 flex items-center px-2 gap-0.5">
+      <div className="h-9 flex items-center px-2 gap-0.5 overflow-x-auto scrollbar-hide">
         {/* Zoom */}
         <div className="flex items-center gap-0.5 bg-gray-50 rounded-md px-1 mr-1">
           <button onClick={onZoomOut} className="p-1 hover:bg-gray-200 rounded text-gray-600"><ZoomOut size={13} /></button>

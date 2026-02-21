@@ -79,7 +79,7 @@ export default function Home() {
     <div className="min-h-[calc(100vh-64px)]">
       {/* Hero */}
       <section className="bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 text-white">
-        <div className="max-w-6xl mx-auto px-6 py-20 text-center">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20 text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4">
             Créez de belles <br className="hidden md:block" />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 to-orange-300">frises chronologiques</span>
@@ -87,16 +87,16 @@ export default function Home() {
           <p className="text-blue-100 max-w-lg mx-auto mb-8 text-lg">
             Éditeur visuel simple et puissant. Partagez vos frises et explorez celles de la communauté.
           </p>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <button
               onClick={createNew}
-              className="px-6 py-3 bg-white text-blue-700 font-bold rounded-xl hover:bg-blue-50 transition flex items-center gap-2 shadow-lg"
+              className="w-full sm:w-auto px-6 py-3 bg-white text-blue-700 font-bold rounded-xl hover:bg-blue-50 transition flex items-center justify-center gap-2 shadow-lg"
             >
               <Plus size={18} /> Créer une frise
             </button>
             <Link
               to="/gallery"
-              className="px-6 py-3 border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white/10 transition flex items-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white/10 transition flex items-center justify-center gap-2"
             >
               <Globe size={18} /> Explorer la galerie
             </Link>
@@ -105,8 +105,8 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="grid md:grid-cols-3 gap-6">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           {[
             { icon: Sparkles, title: 'Éditeur intuitif', desc: 'Ajoutez événements, périodes et césures en quelques clics. Personnalisez couleurs, polices et formats.' },
             { icon: Globe, title: 'Galerie publique', desc: 'Publiez vos frises et découvrez celles créées par la communauté. Filtrez par thème et période.' },
@@ -125,7 +125,7 @@ export default function Home() {
 
       {/* Mes frises */}
       {user && (
-        <section className="max-w-6xl mx-auto px-6 pb-12">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-12">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">Mes frises</h2>
             <button onClick={createNew} className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">
@@ -153,7 +153,7 @@ export default function Home() {
       )}
 
       {/* Frises publiques récentes */}
-      <section className="max-w-6xl mx-auto px-6 pb-16">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Frises récentes de la communauté</h2>
           <Link to="/gallery" className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">

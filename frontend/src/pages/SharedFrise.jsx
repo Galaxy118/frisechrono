@@ -76,23 +76,23 @@ export default function SharedFrise() {
   return (
     <div className="h-screen flex flex-col bg-gray-100">
       {/* Top bar */}
-      <div className="h-12 bg-white border-b flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <Link to="/" className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft size={16} /></Link>
-          <Clock size={16} className="text-blue-600" />
-          <h1 className="font-bold text-sm truncate max-w-[300px]">{frise.title}</h1>
+      <div className="h-12 bg-white border-b flex items-center justify-between px-2 sm:px-4 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <Link to="/" className="p-1.5 hover:bg-gray-100 rounded-lg shrink-0"><ArrowLeft size={16} /></Link>
+          <Clock size={16} className="text-blue-600 shrink-0 hidden sm:block" />
+          <h1 className="font-bold text-xs sm:text-sm truncate">{frise.title}</h1>
           {frise.author && (
-            <span className="text-xs text-gray-400">par {frise.author.username}</span>
+            <span className="hidden sm:inline text-xs text-gray-400">par {frise.author.username}</span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-1">
             <button onClick={() => setZoom((z) => Math.max(z - 0.15, 0.3))} className="px-2 py-1 text-xs hover:bg-gray-200 rounded">−</button>
-            <span className="px-2 text-xs font-medium">{Math.round(zoom * 100)}%</span>
+            <span className="px-1 sm:px-2 text-xs font-medium">{Math.round(zoom * 100)}%</span>
             <button onClick={() => setZoom((z) => Math.min(z + 0.15, 3))} className="px-2 py-1 text-xs hover:bg-gray-200 rounded">+</button>
           </div>
-          <button onClick={handleExportPNG} className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 flex items-center gap-1">
-            <Download size={13} /> Exporter
+          <button onClick={handleExportPNG} className="px-2 sm:px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 flex items-center gap-1">
+            <Download size={13} /> <span className="hidden sm:inline">Exporter</span>
           </button>
         </div>
       </div>

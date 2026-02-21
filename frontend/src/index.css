@@ -8,6 +8,10 @@
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
+/* ─── Masquer scrollbar (toolbar mobile) ─── */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
 /* ─── Canvas dans l'éditeur ─── */
 .timeline-canvas-wrapper {
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12);

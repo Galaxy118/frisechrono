@@ -38,14 +38,14 @@ export default function Admin() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 min-h-[calc(100vh-64px)]">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8 min-h-[calc(100vh-64px)]">
       <div className="flex items-center gap-3 mb-6">
         <Shield size={24} className="text-blue-600" />
-        <h1 className="text-2xl font-extrabold">Administration</h1>
+        <h1 className="text-xl sm:text-2xl font-extrabold">Administration</h1>
       </div>
 
       {/* Onglets */}
-      <div className="flex gap-1 border-b mb-6">
+      <div className="flex gap-1 border-b mb-6 overflow-x-auto scrollbar-hide">
         {[
           { id: 'dashboard', icon: BarChart3, label: 'Tableau de bord' },
           { id: 'users', icon: Users, label: 'Utilisateurs' },
@@ -193,16 +193,16 @@ function UsersTab({ navigate }) {
         <>
           <p className="text-sm text-gray-400 mb-3">{total} utilisateur{total > 1 ? 's' : ''}</p>
 
-          <div className="bg-white border rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white border rounded-xl overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm min-w-[600px]">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                 <tr>
-                  <th className="px-4 py-3 text-left">Utilisateur</th>
-                  <th className="px-4 py-3 text-left">Email</th>
-                  <th className="px-4 py-3 text-center">Rôle</th>
-                  <th className="px-4 py-3 text-center">Frises</th>
-                  <th className="px-4 py-3 text-left">Inscrit</th>
-                  <th className="px-4 py-3 text-center">Actions</th>
+                  <th className="px-3 sm:px-4 py-3 text-left">Utilisateur</th>
+                  <th className="px-3 sm:px-4 py-3 text-left">Email</th>
+                  <th className="px-3 sm:px-4 py-3 text-center">Rôle</th>
+                  <th className="px-3 sm:px-4 py-3 text-center">Frises</th>
+                  <th className="px-3 sm:px-4 py-3 text-left">Inscrit</th>
+                  <th className="px-3 sm:px-4 py-3 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -380,7 +380,7 @@ function FrisesTab({ navigate }) {
         <>
           <p className="text-sm text-gray-400 mb-3">{total} frise{total > 1 ? 's' : ''}</p>
 
-          <div className="bg-white border rounded-xl overflow-hidden">
+          <div className="bg-white border rounded-xl overflow-hidden overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                 <tr>

@@ -256,123 +256,151 @@ export default function ViewFrise() {
   return (
     <div className="h-screen flex flex-col bg-gray-100">
       {/* Top bar */}
-      <div className="h-14 bg-white border-b flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <Link to="/gallery" className="p-1.5 hover:bg-gray-100 rounded-lg shrink-0" title="Retour à la galerie">
-            <ArrowLeft size={16} />
-          </Link>
-          <Globe size={16} className="text-green-500 shrink-0" />
-          <h1 className="font-bold text-sm truncate">{frise.title}</h1>
-          {ownerUsername && (
-            <Link
-              to={`/profile/${ownerUsername}`}
-              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-600 transition shrink-0"
-            >
-              {ownerAvatar ? (
-                <img src={ownerAvatar} alt={ownerUsername} className="w-5 h-5 rounded-full object-cover" />
-              ) : (
-                <User size={12} />
-              )}
-              {ownerUsername}
+      <div className="bg-white border-b shrink-0">
+        {/* Rangée 1 : Titre + actions principales */}
+        <div className="h-12 sm:h-14 flex items-center justify-between px-2 sm:px-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <Link to="/gallery" className="p-1.5 hover:bg-gray-100 rounded-lg shrink-0" title="Retour à la galerie">
+              <ArrowLeft size={16} />
             </Link>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Vues */}
-          <span className="flex items-center gap-1 text-xs text-gray-400">
-            <Eye size={13} /> {frise.views || 0}
-          </span>
-
-          {/* Likes */}
-          <button
-            onClick={handleLike}
-            disabled={!isAuthenticated || liking}
-            title={isAuthenticated ? (liked ? 'Retirer le like' : 'Liker') : 'Connectez-vous pour liker'}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition ${
-              liked
-                ? 'bg-red-50 text-red-500 hover:bg-red-100'
-                : isAuthenticated
-                  ? 'bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-red-500'
-                  : 'bg-gray-50 text-gray-300 cursor-not-allowed'
-            }`}
-          >
-            <Heart size={13} className={liked ? 'fill-current' : ''} />
-            {likesCount}
-          </button>
-
-          {/* Commentaires count */}
-          <button
-            onClick={() => setShowComments(v => !v)}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition ${showComments ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
-            title="Commentaires & Suggestions"
-          >
-            <MessageCircle size={13} />
-            {frise.commentCount || 0}
-          </button>
-
-          {/* Tags */}
-          {frise.tags?.length > 0 && (
-            <div className="hidden md:flex items-center gap-1">
-              {frise.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-medium">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Zoom */}
-          <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-1">
-            <button onClick={() => setZoom((z) => Math.max(z - 0.15, 0.3))} className="px-2 py-1 text-xs hover:bg-gray-200 rounded">−</button>
-            <span className="px-2 text-xs font-medium">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom((z) => Math.min(z + 0.15, 3))} className="px-2 py-1 text-xs hover:bg-gray-200 rounded">+</button>
-          </div>
-
-          {/* Copier */}
-          {isAuthenticated && (
-            <button
-              onClick={handleCopy}
-              disabled={copying}
-              className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 flex items-center gap-1 disabled:opacity-50"
-              title="Copier cette frise dans votre compte"
-            >
-              <Copy size={13} />
-              {copying ? 'Copie…' : 'Copier'}
-            </button>
-          )}
-          {copyMsg && (
-            <span className="text-xs font-medium text-emerald-600 animate-pulse">{copyMsg}</span>
-          )}
-
-          {/* Export menu */}
-          <div ref={exportRef} className="relative">
-            <button
-              onClick={() => setExportOpen(!exportOpen)}
-              className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 flex items-center gap-1"
-            >
-              <Download size={13} /> Exporter <ChevronDown size={10} />
-            </button>
-            {exportOpen && (
-              <div className="absolute top-full right-0 mt-1 bg-white border rounded-lg shadow-xl py-1 z-50 w-44">
-                <button onClick={handleExportPNG} className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50">
-                  <FileImage size={13} /> Exporter PNG
-                </button>
-                <button onClick={handleExportJSON} className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50">
-                  <FileJson size={13} /> Exporter JSON
-                </button>
-                <button onClick={handlePrint} className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50">
-                  <Printer size={13} /> Imprimer
-                </button>
-              </div>
+            <Globe size={14} className="text-green-500 shrink-0 hidden sm:block" />
+            <h1 className="font-bold text-xs sm:text-sm truncate">{frise.title}</h1>
+            {ownerUsername && (
+              <Link
+                to={`/profile/${ownerUsername}`}
+                className="hidden md:flex items-center gap-1.5 text-xs text-gray-500 hover:text-blue-600 transition shrink-0"
+              >
+                {ownerAvatar ? (
+                  <img src={ownerAvatar} alt={ownerUsername} className="w-5 h-5 rounded-full object-cover" />
+                ) : (
+                  <User size={12} />
+                )}
+                {ownerUsername}
+              </Link>
             )}
           </div>
 
-          {/* Modifier (si propriétaire) */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* Vues */}
+            <span className="hidden sm:flex items-center gap-1 text-xs text-gray-400">
+              <Eye size={13} /> {frise.views || 0}
+            </span>
+
+            {/* Likes */}
+            <button
+              onClick={handleLike}
+              disabled={!isAuthenticated || liking}
+              title={isAuthenticated ? (liked ? 'Retirer le like' : 'Liker') : 'Connectez-vous pour liker'}
+              className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition ${
+                liked
+                  ? 'bg-red-50 text-red-500 hover:bg-red-100'
+                  : isAuthenticated
+                    ? 'bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-red-500'
+                    : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+              }`}
+            >
+              <Heart size={13} className={liked ? 'fill-current' : ''} />
+              <span className="hidden sm:inline">{likesCount}</span>
+            </button>
+
+            {/* Commentaires toggle */}
+            <button
+              onClick={() => setShowComments(v => !v)}
+              className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition ${showComments ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
+              title="Commentaires & Suggestions"
+            >
+              <MessageCircle size={13} />
+              <span className="hidden sm:inline">{frise.commentCount || 0}</span>
+            </button>
+
+            {/* Tags — desktop only */}
+            {frise.tags?.length > 0 && (
+              <div className="hidden lg:flex items-center gap-1">
+                {frise.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-medium">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Zoom */}
+            <div className="hidden sm:flex items-center gap-1 bg-gray-50 rounded-lg px-1">
+              <button onClick={() => setZoom((z) => Math.max(z - 0.15, 0.3))} className="px-2 py-1 text-xs hover:bg-gray-200 rounded">−</button>
+              <span className="px-1 text-xs font-medium min-w-[36px] text-center">{Math.round(zoom * 100)}%</span>
+              <button onClick={() => setZoom((z) => Math.min(z + 0.15, 3))} className="px-2 py-1 text-xs hover:bg-gray-200 rounded">+</button>
+            </div>
+
+            {/* Copier — desktop */}
+            {isAuthenticated && (
+              <button
+                onClick={handleCopy}
+                disabled={copying}
+                className="hidden md:flex px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 items-center gap-1 disabled:opacity-50"
+                title="Copier cette frise dans votre compte"
+              >
+                <Copy size={13} />
+                {copying ? 'Copie…' : 'Copier'}
+              </button>
+            )}
+
+            {/* Export menu */}
+            <div ref={exportRef} className="relative">
+              <button
+                onClick={() => setExportOpen(!exportOpen)}
+                className="px-2 sm:px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 flex items-center gap-1"
+              >
+                <Download size={13} /> <span className="hidden sm:inline">Exporter</span> <ChevronDown size={10} />
+              </button>
+              {exportOpen && (
+                <div className="absolute top-full right-0 mt-1 bg-white border rounded-lg shadow-xl py-1 z-50 w-44">
+                  <button onClick={handleExportPNG} className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50">
+                    <FileImage size={13} /> Exporter PNG
+                  </button>
+                  <button onClick={handleExportJSON} className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50">
+                    <FileJson size={13} /> Exporter JSON
+                  </button>
+                  <button onClick={handlePrint} className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50">
+                    <Printer size={13} /> Imprimer
+                  </button>
+                  {/* Actions mobile dans le menu export */}
+                  {isAuthenticated && (
+                    <button onClick={(e) => { handleCopy(); setExportOpen(false); }} className="md:hidden w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50 border-t">
+                      <Copy size={13} /> Copier la frise
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modifier (si propriétaire) */}
+            {frise.isOwner && (
+              <Link
+                to={`/editor/${id}`}
+                className="hidden sm:flex px-3 py-1.5 bg-gray-800 text-white text-xs font-medium rounded-lg hover:bg-gray-900 items-center gap-1"
+              >
+                Modifier
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Rangée 2 mobile : Zoom + actions compactes */}
+        <div className="sm:hidden flex items-center justify-between px-2 py-1.5 border-t border-gray-100">
+          <div className="flex items-center gap-1">
+            <span className="flex items-center gap-1 text-xs text-gray-400">
+              <Eye size={12} /> {frise.views || 0}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-1">
+            <button onClick={() => setZoom((z) => Math.max(z - 0.15, 0.3))} className="px-2 py-1 text-xs hover:bg-gray-200 rounded">−</button>
+            <span className="px-1 text-xs font-medium">{Math.round(zoom * 100)}%</span>
+            <button onClick={() => setZoom((z) => Math.min(z + 0.15, 3))} className="px-2 py-1 text-xs hover:bg-gray-200 rounded">+</button>
+          </div>
           {frise.isOwner && (
             <Link
               to={`/editor/${id}`}
-              className="px-3 py-1.5 bg-gray-800 text-white text-xs font-medium rounded-lg hover:bg-gray-900 flex items-center gap-1"
+              className="px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded-lg hover:bg-gray-900 flex items-center gap-1"
             >
               Modifier
             </Link>
@@ -380,18 +408,32 @@ export default function ViewFrise() {
         </div>
       </div>
 
+      {copyMsg && (
+        <div className="bg-emerald-50 text-emerald-700 text-xs text-center py-1.5 font-medium animate-pulse">{copyMsg}</div>
+      )}
+
       {/* Contenu principal */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Canvas lecture seule */}
-        <div className={`flex-1 ${showComments ? '' : ''}`}>
+        <div className="flex-1">
           <TimelineCanvas data={data} zoom={zoom} />
         </div>
 
         {/* Panneau commentaires / suggestions */}
         {showComments && (
-          <div className="w-96 bg-white border-l flex flex-col shrink-0">
+          <>
+            {/* Overlay mobile fond semi-transparent */}
+            <div className="md:hidden fixed inset-0 bg-black/30 z-40" onClick={() => setShowComments(false)} />
+            <div className="fixed inset-y-0 right-0 z-50 w-full max-w-sm md:static md:z-auto md:w-96 md:max-w-none bg-white border-l flex flex-col shrink-0 shadow-xl md:shadow-none">
             {/* Onglets */}
             <div className="flex border-b shrink-0">
+              {/* Bouton fermer mobile */}
+              <button
+                onClick={() => setShowComments(false)}
+                className="md:hidden p-3 text-gray-400 hover:text-gray-600"
+              >
+                <ArrowLeft size={16} />
+              </button>
               <button
                 onClick={() => setActiveTab('comment')}
                 className={`flex-1 py-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
@@ -476,6 +518,7 @@ export default function ViewFrise() {
               </div>
             )}
           </div>
+          </>
         )}
       </div>
     </div>
